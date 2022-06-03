@@ -22,7 +22,7 @@ end
 
 local function getFileNames(path)
 	path = path or "./"
-	return fs.find("*.lua")
+	return fs.find(path.."*.lua")
 end
 
 
@@ -31,7 +31,7 @@ local function install(files)
 	if files[1] == "update" then local files = getFileNames() end
 	if files[1] == "all" then local files = getFileNames(root) end
 	if files[1] == "list" then 
-		print(getFileNames(root)) 
+		for _, file in ipairs(getFileNames(root)) do print(file) end
 		return
 	end
 
