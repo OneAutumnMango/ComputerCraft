@@ -28,9 +28,7 @@ end
 
 local function install(files)
 	local root = getDiskPath()
-	if files[1] == "update" then 
-		local files = getFileNames() 
-	end
+	if files[1] == "update" then local files = getFileNames() end
 	if files[1] == "all" then local files = getFileNames(root) end
 	if files[1] == "list" then print(getFileNames(root)) end
 
