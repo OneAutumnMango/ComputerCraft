@@ -20,9 +20,17 @@ local function getDiskPath()
 	return disk.getMountPath(side)
 end
 
+local function getFileNames(path)
+	path = path or "./"
+	return fs.find("*.lua")
+end
+
 
 local function install(files)
 	local root = getDiskPath()
+	if files[1] = "update" then local files = getFileNames() end
+	if files[1] = "all" then local files = getFileNames(root) end
+	if files[1] = "list" then print(getFileNames(root)) end
 
 	for _, file in ipairs(files) do
 		local path = root.."/"..file
@@ -34,5 +42,6 @@ local function install(files)
 		fs.copy(path, file)
 	end
 end
+
 
 install(args)
