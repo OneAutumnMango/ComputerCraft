@@ -42,7 +42,6 @@ local function install(files)
 		for _, file in ipairs(getFileNames(root)) do print(file) end
 		return
 	end
-	--print(textutils.serialize(files))
 
 	for _, file in ipairs(files) do
 		local path = root.."/"..file
