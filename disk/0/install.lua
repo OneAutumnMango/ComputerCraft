@@ -23,6 +23,10 @@ end
 local function getFileNames(path)
 	local path = path or "."
 	files = fs.find(path.."/*.lua")
+	if path == "." then
+		return files
+	end
+
 	for i, file in ipairs(files) do
 		files[i] = files[i]:sub(#path+1)
 	end
@@ -38,7 +42,7 @@ local function install(files)
 		for _, file in ipairs(getFileNames(root)) do print(file) end
 		return
 	end
-	print(textutils.serialize(files))
+	--print(textutils.serialize(files))
 
 	for _, file in ipairs(files) do
 		local path = root.."/"..file
