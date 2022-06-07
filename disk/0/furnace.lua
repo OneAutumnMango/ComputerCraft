@@ -80,6 +80,10 @@ function main()
     turtle.turnLeft()
     turtle.turnLeft()
     rtrn()
+    for slot=1,16 do 
+        turtle.select(slot)
+        if turtle.dropUp(2) then os.sleep(60); break end
+    end
 end
 
 

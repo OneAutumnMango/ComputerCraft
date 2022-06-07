@@ -43,7 +43,8 @@ function unload()
 end
 
 function farm()
-    while width > 0 do
+    local w = width
+    while w > 0 do
         for j=1, length do
             replantIfGrown()
                 
@@ -61,7 +62,7 @@ function farm()
         turtle.turnLeft()
         turtle.forward()
         turtle.turnLeft()
-        width = width - 1
+        w = w - 1
         coord.y = coord.y + 1
     end
 

@@ -8,7 +8,7 @@ local function getSide()  --> search for drive periferal
 		end
 	end
 	print("Drive not found.")
-	os.exit()  --> if no drive found
+	fs.exit()  --> if no drive found
 end
 
 local function getDiskPath()
