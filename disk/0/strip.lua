@@ -24,8 +24,8 @@ local dir = {
 }
 
 
-function isIn(table, index) -- checks if a key is in a set, returns true if it is, returns false if not
-    return table[index] ~= nil
+function isIn(tbl, index) -- checks if a key is in a set, returns true if it is, returns false if not
+    return tbl[index] ~= nil
 end
 
 
@@ -35,6 +35,14 @@ function isOre(data)
     end 
     return false
 end
+
+
+function getIndex(tbl, val)
+    for i, v in pairs(tbl) do
+        if v == val then return i end
+    end
+end
+
 
 
 
@@ -116,6 +124,13 @@ function miner:turnRight()
     miner.facing = (miner.facing + 1) % 4
 end
 
+function miner:face(dirToFace)
+    if dirToFace == (miner.facing - 1) % 4 then miner:turnLeft()
+    elseif dirToFace == (miner.facing + 1) % 4 then miner:turnRight()
+    else miner:turnRight(); miner:turnRight() end
+end
+
+
 function miner:checkAll()
     miner.check.up()
     miner.check.down()
@@ -175,6 +190,31 @@ function miner:stepToCoord(oreV, check)
         end
     end
 end
+
+function miner:mine()
+    -- loop until condition \/
+    -- dig forward
+    local wasAt = miner.coord
+    local wasFacing = miner.facing
+
+    while miner.oresToMine do  -- while there are known ores to mine
+        local closest = miner:getClosest()  -- pick closest ore
+
+        while miner.coord ~= closest do
+            miner:stepToCoord(closest)  -- step to ore and mine it
+        end
+        table.remove(miner.oresToMine, getIndex(miner.oresToMine, closest))  -- remove value when mined
+    end
+
+    -- return to original pos and orientation
+    while miner.coord ~= wasAt do
+        miner:stepToCoord(wasAt)  -- step to ore and mine it
+    end
+    miner:face(wasFacing)
+
+end
+
+
 
 -- miner:checkAll()
 -- print(textutils.serialize(miner.oresToMine))
