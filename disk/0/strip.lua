@@ -12,10 +12,10 @@ local heights = {
 }
 
 local dirTable = {
-    vector.new(1, 0, 0),
-    vector.new(0, 0, 1),
-    vector.new(-1, 0, 0),
-    vector.new(0, 0, -1)
+    [0] = vector.new(1, 0, 0),
+    [1] = vector.new(0, 0, 1),
+    [2] = vector.new(-1, 0, 0),
+    [3] = vector.new(0, 0, -1)
 }
 
 local dir = {
@@ -29,29 +29,8 @@ function isIn(table, index) -- checks if a key is in a set, returns true if it i
 end
 
 
-local dig = {}
-dig.f = function()
-    while not turtle.forward() do
-        turtle.dig()
-    end
-    return true
-end
-dig.u = function()
-    while not turtle.up() do
-        turtle.digUp()
-    end
-    return true
-end
-dig.d = function()
-    while not turtle.down() do
-        turtle.digDown()
-    end
-    return true
-end
-
-
 function isOre(data) 
-    if string.match(data.name, "_ore$") then 
+    if string.match(data.name, "_ore$") then -- looks for "_ore" at the end of the string
         return true
     end 
     return false
@@ -63,10 +42,31 @@ end
 
 miner = {
     coord = vector.new(0, 0, 0),
-    facing = 1,
+    facing = 0,
     
     oresToMine = {},
 
+
+    dig = {
+        f = function()
+            while not turtle.forward() do
+                turtle.dig()
+            end
+            miner.coord = miner.coord + dirTable[facing]
+        end,
+        u = function()
+            while not turtle.up() do
+                turtle.digUp()
+            end
+            miner.coord = miner.coord + dir.up
+        end,
+        d = function()
+            while not turtle.down() do
+                turtle.digDown()
+            end
+            miner.coord = miner.coord + dir.down
+        end
+    },
 
     check = {
         front = function()
@@ -98,16 +98,86 @@ miner = {
                     local oreCoord = miner.coord + dir.down
                     if not isIn(miner.oresToMine, oreCoord) then
                         table.insert(miner.oresToMine, oreCoord)
-                    end
+                    end 
                 end
             end
-        end,
+        end
     },
 }
 
-print(miner.coord)
-miner.check.front()
-miner.check.up()
-miner.check.down()
-print(textutils.serialize(miner.oresToMine))
 
+function miner:turnLeft()
+    turtle.turnLeft()
+    miner.facing = (miner.facing - 1) % 4
+end
+
+function miner:turnRight()
+    turtle.turnRight()
+    miner.facing = (miner.facing + 1) % 4
+end
+
+function miner:checkAll()
+    miner.check.up()
+    miner.check.down()
+    miner.check.front()
+    miner:turnRight()
+    miner.check.front()
+    miner:turnRight()
+    miner.check.front()
+    miner:turnRight()
+    miner.check.front()
+    miner:turnRight()  -- faces original dir
+end
+
+function miner:getClosest()
+    local min = 10000000
+    local minV = nil
+    for i, v in ipairs(miner.oresToMine) do
+        local l = (miner.coord - v):length()
+        if l < min then min = l; minV = v end
+    end
+    return minV
+end
+
+function miner:stepToCoord(oreV, check)
+    local check = check or true  -- check = false if you dont want to check
+    local dif = miner.coord - oreV
+    if dif:dot(dirTable[miner.facing]) < 0 then 
+        miner.dig.f()
+        if check then miner:checkAll() end
+        return
+    elseif dif:dot(dir.up) < 0 then 
+        miner.dig.u()
+        if check then miner:checkAll() end
+        return
+    elseif dif:dot(dir.down) < 0 then 
+        miner.dig.d()
+        if check then miner:checkAll() end
+        return
+    else 
+        miner:turnRight()
+        if dif:dot(dirTable[miner.facing]) < 0 then 
+            miner.dig.f()
+            if check then miner:checkAll() end
+            return
+        else 
+            miner:turnRight()
+            if dif:dot(dirTable[miner.facing]) < 0 then 
+                miner.dig.f()
+                return
+                if check then miner:checkAll() end
+            else
+                miner:turnRight()
+                miner.dig.f()
+                if check then miner:checkAll() end
+                return
+            end
+        end
+    end
+end
+
+-- miner:checkAll()
+-- print(textutils.serialize(miner.oresToMine))
+-- print(textutils.serialize(miner:getClosest()))
+
+miner:stepToCoord(vector.new(1, -3, 0))
