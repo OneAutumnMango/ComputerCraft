@@ -1,0 +1,150 @@
+-- uses chat as an interface to put items into linked enderchest/pouches to gain global access to the ME system
+local ME = peripheral.find("meBridge")
+local chat = peripheral.find("chatBox")
+
+local function split(msg, sep)
+    if sep == nil then
+        sep = "%s"
+    end
+    local t={}
+    for str in string.gmatch(msg, "([^"..sep.."]+)") do
+            table.insert(t, str)
+    end
+    return t
+end
+
+local function tableToString(list)
+    local out = ""
+    for name, amount in pairs(list) do
+        out = out .. name .. ": " .. amount .. "\n"
+    end
+    return out
+end
+
+local function moreThanOneEntry(list)
+    local count=0
+    for k, v in pairs(list) do
+        count = count + 1
+        if count > 1 then return true end
+    end
+    return false
+end
+
+local function matchItems(pattern)
+    print("pattern:")
+    print(pattern)
+    local l = {}
+    local items = ME.listItems()
+
+    if items == nil then            -- no items found
+        chat.sendMessage("no matching items found")
+    elseif not moreThanOneEntry(items) then   -- one item found
+        chat.sendMessage("one item found")
+        print(tostring(items))
+        print(items.name)
+        l[items.name] = items.amount
+    else                            -- several items found
+        for k, item in pairs(items) do
+            if string.match(item.name, pattern) then
+                l[item.name] = item.amount
+            end
+        end
+    end
+    return l
+end
+
+
+local function get(...)
+    print(arg[1])
+    local list = matchItems(arg[1])
+
+    if next(list) == nil then return  --  no matched items
+    elseif moreThanOneEntry(list) then
+        chat.sendMessage("Several items detected, please narrow your search\n"..tableToString(list))
+        return
+    end
+
+    local amount = tonumber(arg[2]) or 1
+    local name, count = next(list)
+
+    if amount > count then
+        chat.sendMessage("Only "..count.." available")
+        return
+    end
+
+    local key = {name=name, count=amount}
+    local displayName = ME.getItem(key).displayName
+    local amountExported = ME.exportItem(key, "north")
+    chat.sendMessage("\nExported ".. amountExported .." "..displayName)
+end
+
+local function list(...)
+    if arg[1] == nil then
+        chat.sendMessage("Usage: pls list [pattern]")
+        return
+    end
+
+    local l = matchItems(arg[1])
+    if next(l) == nil then return end --  no matched items
+
+    chat.sendMessage(tableToString(l))
+end
+
+local commandHelp = {
+    ["get"] = "Usage: pls get [pattern] [amount]. Will attempt to extract an item of the specified quantity (default = 1). Use pls help list for more info.",
+    ["list"] = "Usage: pls list [pattern]. pattern is a regex pattern it will search through the ME system for a matching item (^ and $ indicate the start and end of a string).",
+    ["help"] = "nice try liberal",
+    ["craft"] = nil,
+}
+
+local function help(...)
+    if arg[1] == nil then
+        local out = "\nAvailable functions: "
+        for key, value in pairs(commandHelp) do
+            out = out .. key .. ", "
+        end
+        out = out .. "\nFor more specific help specify function name after 'help'. eg. pls help get"
+        chat.sendMessage(out)
+    end
+
+    if commandHelp[arg[1]] == nil then
+        chat.sendMessage("Error: Invalid Argument '"..arg[1].."'")
+    end
+    chat.sendMessage(commandHelp[arg[1]])
+end
+
+local commands = {
+    ["get"] = get,
+    ["list"] = list,
+    ["help"] = help,
+    ["craft"] = nil,
+}
+
+
+
+
+local function singleGameLoop()
+    local event, username, message, uuid, isHidden = os.pullEvent("chat")
+    local args = split(message)
+
+    if args[1] ~= "pls" then return end -- skip if not a command
+
+    local cmd = args[2]
+    table.remove(args, 1)
+    table.remove(args, 1)
+
+    local command = commands[cmd]
+
+    if command == nil then
+        chat.sendMessage("command "..cmd.." not implemented")
+        return
+    end
+    command(table.unpack(args))
+
+end
+
+
+print("Starting GlobalME program...")
+while true do
+    singleGameLoop()
+end
